@@ -1,44 +1,29 @@
 import { useEffect, useState } from "react";
 import { DefaultLayout } from "../components/DefaultLayout";
-import { fetchApi } from "../functions/fetchApi";
-import { errorToast } from "../components/Toast";
+import { fetchMultipleApis } from "../functions/fetchMultiple";
 
 type RangeArtists = "short" | "medium" | "long";
 type ActiveTab = "1" | "2" | "3";
 
 function Artists() {
-  const [recentArtists, setRecentArtists] = useState<RecentArtists | null>();
-
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [recentArtists, setRecentArtists] = useState<any>();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("1");
 
-  const fetchRecentArtist = async (rangeArtists: RangeArtists = "long") => {
-    setLoading(true);
-    setError(null);
-
-    const result = await fetchApi<RecentArtists>(
+  const fetchData = async (rangeArtists: RangeArtists = "long") => {
+    const results = await fetchMultipleApis([
       `/v1/me/top/artists?time_range=${rangeArtists}_term`,
-      { method: "GET" },
-      setLoading
-    );
+    ]);
 
-    if (result.error) {
-      setError(result.error);
-      errorToast(error || "Error fetching artists");
-    } else {
-      setRecentArtists(result.data);
-    }
+    if (results && results[0].data) setRecentArtists(results[0].data);
   };
-
   const handleClickTab = (rangeArtists: RangeArtists, activeTab: ActiveTab) => {
-    fetchRecentArtist(rangeArtists);
+    fetchData(rangeArtists);
     setActiveTab(activeTab);
   };
 
   useEffect(() => {
-    fetchRecentArtist();
+    fetchData();
   }, []);
 
   return (

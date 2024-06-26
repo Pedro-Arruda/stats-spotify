@@ -1,3 +1,4 @@
+import { fetchApi } from "./fetchApi";
 import { getRefreshToken } from "./getRefreshToken";
 
 interface FetchApiResult<T> {
@@ -11,27 +12,27 @@ interface FetchApiOptions {
   headers?: Record<string, string>;
 }
 
-export const fetchApi = async <T>(
-  endpoint: string,
+export const fetchMultipleApis = async <T>(
+  endpoints: string[],
   options: FetchApiOptions = {},
   setLoading?: (isLoading: boolean) => void
-): Promise<FetchApiResult<T>> => {
+): Promise<FetchApiResult<T>[] | null> => {
+  setLoading?.(true);
   const code = window.localStorage.getItem("code");
-  let access_token = window.localStorage.getItem("access_token");
   const refresh_token = window.localStorage.getItem("refresh_token");
+  let access_token = window.localStorage.getItem("access_token");
+
+  if (!code || code == undefined) {
+    window.localStorage.clear();
+    return null;
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${access_token}`,
     Accept: `application/json`,
-
     ...options.headers,
   };
-
-  if (!code || code == undefined) {
-    window.localStorage.clear();
-    return { data: null, error: "Failed to refresh token" };
-  }
 
   if (!refresh_token || refresh_token == undefined) {
     const tokens = await getRefreshToken(code);
@@ -41,29 +42,33 @@ export const fetchApi = async <T>(
     headers["Authorization"] = `Bearer ${tokens.access_token}`;
   }
 
-  const url = new URL(endpoint, "https://api.spotify.com/v1");
+  const initialResults = await Promise.all(
+    endpoints.map((endpoint) => fetchApi<T>(endpoint, headers))
+  );
 
-  const fetchOptions: RequestInit = {
-    headers,
-    method: options.method || "GET",
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  };
+  const hasAuthError = initialResults.some(
+    (result) => result.error === "Failed to refresh token"
+  );
 
-  try {
-    setLoading?.(true);
-    let response = await fetch(url.toString(), fetchOptions);
+  if (hasAuthError) {
+    const tokens = await getRefreshToken(code!);
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (tokens) {
+      const refreshedResults = await Promise.all(
+        endpoints.map((endpoint) => fetchApi<T>(endpoint, options))
+      );
+
       setLoading?.(false);
-      return { data: null, error: errorText || response.statusText };
+      return refreshedResults;
+    } else {
+      setLoading?.(false);
+      return endpoints.map(() => ({
+        data: null,
+        error: "Failed to refresh token",
+      }));
     }
-
-    const data = await response.json();
-    setLoading?.(false);
-    return { data, error: null };
-  } catch (error) {
-    setLoading?.(false);
-    return { data: null, error: (error as Error).message };
   }
+
+  setLoading?.(false);
+  return initialResults;
 };

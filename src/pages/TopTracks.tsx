@@ -1,47 +1,31 @@
 import { useEffect, useState } from "react";
 import { DefaultLayout } from "../components/DefaultLayout";
-import { fetchApi } from "../functions/fetchApi";
-import { errorToast } from "../components/Toast";
 import { formatText } from "../functions/formatText";
+import { fetchMultipleApis } from "../functions/fetchMultiple";
 
 type RangeTracks = "short" | "medium" | "long";
 type ActiveTab = "1" | "2" | "3";
 
 function Tracks() {
-  const [recentTracks, setRecentTracks] = useState<RecentTracks | null>();
-
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [recentTracks, setRecentTracks] = useState<any>();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("1");
 
-  const fetchRecentTracks = async (rangeTracks: RangeTracks = "long") => {
-    setLoading(true);
-    setError(null);
+  const fetchData = async (rangeArtists: RangeTracks = "long") => {
+    const results = await fetchMultipleApis([
+      `/v1/me/top/tracks?time_range=${rangeArtists}_term`,
+    ]);
 
-    const result = await fetchApi<RecentTracks>(
-      `/v1/me/top/tracks?time_range=${rangeTracks}_term`,
-      { method: "GET" },
-      setLoading
-    );
-
-    if (result.error) {
-      setError(result.error);
-      errorToast(error || "Error fetching tracks");
-    } else {
-      setRecentTracks(result.data);
-    }
+    if (results && results[0].data) setRecentTracks(results[0].data);
   };
-
-  const handleClickTab = (rangeTracks: RangeTracks, activeTab: ActiveTab) => {
-    fetchRecentTracks(rangeTracks);
+  const handleClickTab = (rangeArtists: RangeTracks, activeTab: ActiveTab) => {
+    fetchData(rangeArtists);
     setActiveTab(activeTab);
   };
 
   useEffect(() => {
-    fetchRecentTracks();
+    fetchData();
   }, []);
-
   return (
     <div>
       <DefaultLayout>
@@ -82,7 +66,7 @@ function Tracks() {
                 </div>
 
                 <div className="flex flex-wrap gap-10 justify-center">
-                  {recentTracks?.items.map((track) => (
+                  {recentTracks?.items.map((track: any) => (
                     <div className="flex flex-col items-center gap-5 max-h-60">
                       <img
                         src={track.album.images[0].url}

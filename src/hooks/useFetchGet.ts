@@ -9,12 +9,12 @@ export const useFetchGet = <T>(endpoint: string): FetchApiResult<T> => {
   const [items, setItems] = useState<T | null>(null);
 
   let code = window.localStorage.getItem("code");
+  console.log(code);
+
   let access_token = window.localStorage.getItem("access_token");
   // let refresh_token = window.localStorage.getItem("refresh_token");
 
   const url = new URL(endpoint, "https://api.spotify.com/v1");
-
-  console.log("access_token", access_token);
 
   const fetchData = async () => {
     try {

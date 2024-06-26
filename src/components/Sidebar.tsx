@@ -11,20 +11,26 @@ export const Sidebar = () => {
       </div>
 
       <ul className="flex flex-col gap-5 mt-10">
-        <div className="flex flex-col items-center gap-1">
-          <img src={artistsIcon} width={22} />
-          <li>Profile</li>
-        </div>
+        <li>
+          <a href="/" className="flex flex-col items-center gap-1">
+            <img src={recentIcon} width={22} />
+            Profile
+          </a>
+        </li>
 
-        <div className="flex flex-col items-center gap-1">
-          <img src={tracksIcon} width={22} />
-          <li>Top Artists</li>
-        </div>
+        <li>
+          <a href="/artists" className="flex flex-col items-center gap-1">
+            <img src={artistsIcon} width={22} />
+            Top Artists
+          </a>
+        </li>
 
-        <div className="flex flex-col items-center gap-1">
-          <img src={recentIcon} width={22} />
-          <li>Recent</li>
-        </div>
+        <li>
+          <a href="/tracks" className="flex flex-col items-center gap-1">
+            <img src={tracksIcon} width={22} />
+            Top Tracks
+          </a>
+        </li>
       </ul>
     </div>
   );
